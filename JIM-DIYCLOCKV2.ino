@@ -179,22 +179,15 @@ void loop() {
     isDimmed = false;
   }
 
-  int displayHours = hours24;
+  // Use hours12 for display
+  int displayHours = hours12;
+  // Safety: never show 0 for hours on a 12-hour clock
+  if (displayHours == 0) {
+    displayHours = 12;
+  }
   bool leadZero = false;
-
-  if (displayHours > 12) {
-    Serial.println("We afternoon! ");
-    Serial.print("Hours: ");
-    Serial.println(displayHours);
-    displayHours = displayHours - 12;
-    if ( displayHours > 9 ) {
-      leadZero = false;
-      Serial.println("Hours greater than 9");
-    } else {
-      leadZero = true;
-      Serial.println("Hours NOT greater than 9, leading ZERO=true");
-      Serial.println(leadZero);
-    }
+  if (displayHours < 10) {
+    leadZero = true;
   }
 
   Serial.print(daysOfTheWeek[weekday(local) - 1]);
@@ -224,14 +217,14 @@ void loop() {
   if (leadZero == true) {
     Serial.println("leading zero needed");
     Serial.print("hours: ");
-    Serial.println(hours24);
-    drawdigit(0, 0, 0, 0, hours24 / 10); //Draw the first digit of the hour
+    Serial.println(displayHours);
+    drawdigit(0, 0, 0, 0, displayHours / 10); //Draw the first digit of the hour
   }
   else {
     Serial.println("leading zero NOT needed");
-    drawdigit(0, currentBrightness, 0, 0, hours24 / 10); //Draw the first digit of the hour
+    drawdigit(0, currentBrightness, 0, 0, displayHours / 10); //Draw the first digit of the hour
   }
-  drawdigit(21, currentBrightness, 0, 0, hours24 - ((hours24 / 10) * 10)); //Draw the second digit of the hour
+  drawdigit(21, currentBrightness, 0, 0, displayHours - ((displayHours / 10) * 10)); //Draw the second digit of the hour
   pixels.setPixelColor(42, pixels.Color(currentBrightness, 0, 0)); //Draw the two middle dots
   pixels.setPixelColor(43, pixels.Color(currentBrightness, 0, 0));
   drawdigit(44, currentBrightness, 0, 0, mins / 10); //Draw the first digit of the minute
