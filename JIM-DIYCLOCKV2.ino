@@ -53,6 +53,10 @@ void fetchLocationFromIP() {
         latitude = payload.substring(latIndex + 6, payload.indexOf(',', latIndex)).toFloat();
         longitude = payload.substring(lonIndex + 6, payload.indexOf(',', lonIndex)).toFloat();
         locationFetched = true;
+        Serial.print("Fetched location: lat=");
+        Serial.print(latitude, 6);
+        Serial.print(", lon=");
+        Serial.println(longitude, 6);
       }
     }
     http.end();
@@ -68,18 +72,17 @@ void fetchSunriseSunset(float latitude, float longitude) {
     int httpCode = http.GET();
     if (httpCode == HTTP_CODE_OK) {
       String payload = http.getString();
-      // Parse JSON for sunrise and sunset times (ISO 8601 format)
       int sunriseIndex = payload.indexOf("sunrise\":\"");
       int sunsetIndex = payload.indexOf("sunset\":\"");
       if (sunriseIndex > 0 && sunsetIndex > 0) {
         String sunriseStr = payload.substring(sunriseIndex + 10, payload.indexOf('"', sunriseIndex + 10));
         String sunsetStr = payload.substring(sunsetIndex + 9, payload.indexOf('"', sunsetIndex + 9));
-        // Extract hour and minute from ISO 8601 (e.g., 2024-05-10T12:34:56+00:00)
+        Serial.print("Fetched sunrise (UTC): "); Serial.println(sunriseStr);
+        Serial.print("Fetched sunset (UTC): "); Serial.println(sunsetStr);
         sunriseHour = sunriseStr.substring(11, 13).toInt();
         sunriseMinute = sunriseStr.substring(14, 16).toInt();
         sunsetHour = sunsetStr.substring(11, 13).toInt();
         sunsetMinute = sunsetStr.substring(14, 16).toInt();
-        // Convert from UTC to local time
         time_t sunriseUTC = (sunriseHour * 3600) + (sunriseMinute * 60);
         time_t sunsetUTC = (sunsetHour * 3600) + (sunsetMinute * 60);
         time_t now = timeClient.getEpochTime();
@@ -89,6 +92,8 @@ void fetchSunriseSunset(float latitude, float longitude) {
         sunriseMinute = minute(sunriseLocal);
         sunsetHour = hour(sunsetLocal);
         sunsetMinute = minute(sunsetLocal);
+        Serial.print("Sunrise (local): "); Serial.print(sunriseHour); Serial.print(":"); Serial.println(sunriseMinute);
+        Serial.print("Sunset (local): "); Serial.print(sunsetHour); Serial.print(":"); Serial.println(sunsetMinute);
       }
     }
     http.end();
@@ -99,11 +104,12 @@ void setup() {
   Serial.begin(115200);
 
   WiFi.begin(ssid, password);
-
+  Serial.print("Connecting to WiFi");
   while ( WiFi.status() != WL_CONNECTED ) {
     delay ( 500 );
     Serial.print ( "." );
   }
+  Serial.println("\nWiFi connected!");
   WiFi.hostname("BigClock");
   timeClient.begin();
 
@@ -134,15 +140,23 @@ void setAllPixelsBrightness(int brightness) {
 
 void loop() {
   timeClient.update();
-  
   // Get UTC time and convert to local time with DST handling
   time_t utc = timeClient.getEpochTime();
   time_t local = usMountain.toLocal(utc);
-
-  int hours = hour(local);
+  int hours24 = hour(local); // 24-hour value for logic
   int mins = minute(local);
   int secs = second(local);
   int today = day(local);
+
+  // 12-hour conversion for display
+  int hours12 = hours24;
+  bool isPM = false;
+  if (hours12 == 0) {
+    hours12 = 12;
+  } else if (hours12 >= 12) {
+    if (hours12 > 12) hours12 -= 12;
+    isPM = true;
+  }
 
   // At midnight, update sunrise/sunset times for the new day
   if (today != lastDay) {
@@ -152,9 +166,9 @@ void loop() {
 
   // Brightness logic
   bool shouldBeDim = false;
-  if (hours < sunriseHour || (hours == sunriseHour && mins < sunriseMinute)) {
+  if (hours24 < sunriseHour || (hours24 == sunriseHour && mins < sunriseMinute)) {
     shouldBeDim = true;
-  } else if (hours > sunsetHour || (hours == sunsetHour && mins >= sunsetMinute)) {
+  } else if (hours24 > sunsetHour || (hours24 == sunsetHour && mins >= sunsetMinute)) {
     shouldBeDim = true;
   }
   if (shouldBeDim && !isDimmed) {
@@ -165,14 +179,15 @@ void loop() {
     isDimmed = false;
   }
 
+  int displayHours = hours24;
   bool leadZero = false;
 
-  if (hours > 12) {
+  if (displayHours > 12) {
     Serial.println("We afternoon! ");
     Serial.print("Hours: ");
-    Serial.println(hours);
-    hours = hours - 12;
-    if ( hours > 9 ) {
+    Serial.println(displayHours);
+    displayHours = displayHours - 12;
+    if ( displayHours > 9 ) {
       leadZero = false;
       Serial.println("Hours greater than 9");
     } else {
@@ -184,24 +199,39 @@ void loop() {
 
   Serial.print(daysOfTheWeek[weekday(local) - 1]);
   Serial.print(", ");
-  Serial.print(hours);
+  Serial.print(displayHours);
   Serial.print(":");
   Serial.print(mins);
   Serial.print(":");
   Serial.println(second(local));
 
+  // Print current time, sunrise, sunset, and brightness mode
+  Serial.print("Current time (24h): ");
+  Serial.print(hours24); Serial.print(":"); Serial.print(mins); Serial.print(":"); Serial.println(secs);
+  Serial.print("Current time (12h): ");
+  Serial.print(hours12); Serial.print(":"); Serial.print(mins); Serial.print(":"); Serial.print(secs);
+  Serial.println(isPM ? " PM" : " AM");
+  Serial.print("Today's sunrise: "); Serial.print(sunriseHour); Serial.print(":"); Serial.println(sunriseMinute);
+  Serial.print("Today's sunset: "); Serial.print(sunsetHour); Serial.print(":"); Serial.println(sunsetMinute);
+  Serial.print("Brightness mode (using 24h time): ");
+  if (hours24 < sunriseHour || (hours24 == sunriseHour && mins < sunriseMinute) || hours24 > sunsetHour || (hours24 == sunsetHour && mins >= sunsetMinute)) {
+    Serial.println("DIM");
+  } else {
+    Serial.println("NORMAL");
+  }
+
   // Send Digits to Clock
   if (leadZero == true) {
     Serial.println("leading zero needed");
     Serial.print("hours: ");
-    Serial.println(hours);
-    drawdigit(0, 0, 0, 0, hours / 10); //Draw the first digit of the hour
+    Serial.println(hours24);
+    drawdigit(0, 0, 0, 0, hours24 / 10); //Draw the first digit of the hour
   }
   else {
     Serial.println("leading zero NOT needed");
-    drawdigit(0, currentBrightness, 0, 0, hours / 10); //Draw the first digit of the hour
+    drawdigit(0, currentBrightness, 0, 0, hours24 / 10); //Draw the first digit of the hour
   }
-  drawdigit(21, currentBrightness, 0, 0, hours - ((hours / 10) * 10)); //Draw the second digit of the hour
+  drawdigit(21, currentBrightness, 0, 0, hours24 - ((hours24 / 10) * 10)); //Draw the second digit of the hour
   pixels.setPixelColor(42, pixels.Color(currentBrightness, 0, 0)); //Draw the two middle dots
   pixels.setPixelColor(43, pixels.Color(currentBrightness, 0, 0));
   drawdigit(44, currentBrightness, 0, 0, mins / 10); //Draw the first digit of the minute
