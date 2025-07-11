@@ -30,6 +30,8 @@
     <line x1="70" y1="279" x2="109" y2="250" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
     <line x1="109" y1="250" x2="109" y2="190" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
     <text x="70" y="35" font-size="14" text-anchor="middle" fill="#222">Hour Tens</text>
+    <!-- Progression arrow: Digit 1 bottom right to Digit 2 middle -->
+    <line x1="118" y1="250" x2="200" y2="159" stroke="#00c" stroke-width="3" marker-end="url(#arrow)"/>
   </g>
 
   <!-- Second Digit (Hour Ones) -->
@@ -57,6 +59,8 @@
     <line x1="70" y1="279" x2="109" y2="250" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
     <line x1="109" y1="250" x2="109" y2="190" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
     <text x="70" y="35" font-size="14" text-anchor="middle" fill="#222">Hour Ones</text>
+    <!-- Progression arrow: Digit 2 bottom right to Colon top -->
+    <line x1="118" y1="250" x2="220" y2="120" stroke="#00c" stroke-width="3" marker-end="url(#arrow)"/>
   </g>
 
   <!-- Colon Separator -->
@@ -68,6 +72,8 @@
     <!-- Arrow for colon order -->
     <line x1="30" y1="130" x2="30" y2="200" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
     <text x="30" y="95" font-size="14" text-anchor="middle" fill="#222">Colon</text>
+    <!-- Progression arrow: Colon bottom to Digit 3 middle -->
+    <line x1="30" y1="210" x2="150" y2="159" stroke="#00c" stroke-width="3" marker-end="url(#arrow)"/>
   </g>
 
   <!-- Third Digit (Minute Tens) -->
@@ -95,6 +101,8 @@
     <line x1="70" y1="279" x2="109" y2="250" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
     <line x1="109" y1="250" x2="109" y2="190" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
     <text x="70" y="35" font-size="14" text-anchor="middle" fill="#222">Minute Tens</text>
+    <!-- Progression arrow: Digit 3 bottom right to Digit 4 middle -->
+    <line x1="128" y1="250" x2="200" y2="159" stroke="#00c" stroke-width="3" marker-end="url(#arrow)"/>
   </g>
 
   <!-- Fourth Digit (Minute Ones) -->
